@@ -13,7 +13,7 @@ the main file.
 
 # local packages
 from models import Models
-from data_handling import Loaders
+from data_handler import Loaders
 from losses import Losses
 from .logs.logs import Logs
 from .actions.test import TestAction

@@ -4,7 +4,7 @@ meta_data:
 
 defaults: 
   model_name: &model_name mask_rcnn
-  step: &step 11
+  step: &step 80
   seed: &seed 42
   device: &device "cuda:0"
 
@@ -12,18 +12,18 @@ loops:
   device: *device
   grad_acc: 1
   start: 0
-  end: 3
+  end: 100
   seed: *seed
 
 logs:
   model_name: *model_name
   logger_type: basic
-  print_freq: 10
+  print_freq: 50
   iter_init: 0
   best_init: [.inf, 0]
   step: *step
-  exp_dir: "Mask_RCNN_Jigsaw/AWL"
-  sub_dir: "model_2"
+  exp_dir: "Basic_OBA_mrcnn"
+  sub_dir: "model_0"
   last_title: last_model.pth
   best_post_title: post_best.pth
   best_pre_title: pre_best.pth
@@ -31,7 +31,7 @@ logs:
 model:
   model_name: *model_name
   device: *device
-  load_model: outputs/models/Mask_RCNN_Jigsaw/AWL/model_2/post_best.pth
+  load_model: false
   params:
     ssl_pt: false
     backbone_type: pre-trained
@@ -44,7 +44,7 @@ model:
     device: *device
 
 dataset:
-  source: data_handling/sources/jersey_dataset_v4
+  source: data_handler/sources/basic_oba_jersey_dataset
   random_seed: *seed
   model_name: *model_name
   col_fn: true
@@ -74,13 +74,13 @@ dataset:
 losses:
   model_name: *model_name
   params: 
-    awl: false
+    awl: true
 
 optimiser:
   model_name: *model_name
   opt_name: "Adam"
   opt_params:
-    lr: 0.000005
+    lr: 0.00005
   sched_name: "StepLR"
   sched_params:
     step: *step

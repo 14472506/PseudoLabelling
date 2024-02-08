@@ -99,38 +99,38 @@ class Step():
             if hasattr(model.backbone.body.layer4, "dropout"):
                 model.backbone.body.layer4.dropout.p = p
 
-            ## set form map evaluation
-            #model.eval()
-            #metric = MeanAveragePrecision(iou_type = "segm")
-            #sup_iter = iter(loader)
+            # set form map evaluation
+            model.eval()
+            metric = MeanAveragePrecision(iou_type = "segm")
+            sup_iter = iter(loader)
 
-            #for i in range(len(loader)):
-            #    input, target = next(sup_iter)
-            #    input = list(image.to(device) for image in input)
-        
-            #    with torch.autocast("cuda"):
-            #        with torch.no_grad():
-            #            predictions = model(input)
+            for i in range(len(loader)):
+                input, target = next(sup_iter)
+                input = list(image.to(device) for image in input)
+     
+                with torch.autocast("cuda"):
+                    with torch.no_grad():
+                        predictions = model(input)
 
-            #    masks_in = predictions[0]["masks"].detach().cpu()
-            #    masks_in = masks_in > 0.5
-            #    masks_in = masks_in.squeeze(1) 
-            #    targs_masks = target[0]["masks"].bool()
-            #    targs_masks = targs_masks.squeeze(1)  
-            #    preds = [dict(masks=masks_in, scores=predictions[0]["scores"].detach().cpu(), labels=predictions[0]["labels"].detach().cpu(),)]
-            #    targs = [dict(masks=targs_masks, labels=target[0]["labels"],)]
-            #    metric.update(preds, targs)
+                masks_in = predictions[0]["masks"].detach().cpu()
+                masks_in = masks_in > 0.5
+                masks_in = masks_in.squeeze(1) 
+                targs_masks = target[0]["masks"].bool()
+                targs_masks = targs_masks.squeeze(1)  
+                preds = [dict(masks=masks_in, scores=predictions[0]["scores"].detach().cpu(), labels=predictions[0]["labels"].detach().cpu(),)]
+                targs = [dict(masks=targs_masks, labels=target[0]["labels"],)]
+                metric.update(preds, targs)
 
-            #    del predictions, input, target, masks_in, targs_masks, preds, targs
-            #    torch.cuda.empty_cache()
+                del predictions, input, target, masks_in, targs_masks, preds, targs
+                torch.cuda.empty_cache()
             
-            #res = metric.compute()
-            #map = res["map"].item()
+            res = metric.compute()
+            map = res["map"].item()
 
             loss = loss_acc/len(loader)
             logger.val_loop_reporter(epoch, device, loss)
             log["val_loss"].append(loss)
-            #log["map"].append(map)
+            log["map"].append(map)
                 
         # initial params
         banner = "--------------------------------------------------------------------------------"

@@ -71,3 +71,12 @@ class InstanceWrapper(torch.utils.data.Dataset):
     def __len__(self):
         """ Details """
         return len(self.dataset)
+
+def wrappers(model_type):
+    """ Detials """
+    transform_select = {
+        "mask_rcnn": InstanceWrapper,
+        "dual_mask_multi_task": InstanceWrapper
+    }
+    return transform_select[model_type]
+

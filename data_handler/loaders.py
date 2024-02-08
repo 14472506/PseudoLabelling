@@ -15,11 +15,7 @@ import torch
 import numpy as np
 
 # import local packages
-from .datasets.jigsaw import JigsawDataset
-from .datasets.rotnet import RotNetDataset
-from .datasets.coco import COCODataset
-from .datasets.coco_rotnet import COCORotDataset, COCO_collate_function
-from .datasets.coco_jigsaw import COCOJigsawDataset
+from .datasets.coco import COCODataset, COCO_collate_function
 from .transforms.transforms import Transforms
 from .transforms.transform_wrapper import wrappers
 
@@ -60,12 +56,8 @@ class Loaders():
     def _get_dataset_class(self):
         """ retirieve the dataloader based on the model type """
         dataset_selector = {
-            "rotnet_resnet_50": RotNetDataset,
-            "jigsaw": JigsawDataset,
             "mask_rcnn": COCODataset,
             "dual_mask_multi_task": COCODataset,
-            "rotmask_multi_task": [COCORotDataset, RotNetDataset],
-            "jigmask_multi_task": [COCOJigsawDataset, JigsawDataset, COCODataset]
         }
         self.dataset_class = dataset_selector[self.model_type]
     
@@ -74,11 +66,7 @@ class Loaders():
     def loader(self):
         """ Return the data loader based on the config """
         loader_selector = {
-            "rotnet_resnet_50": self._classifier_loader,
-            "jigsaw": self._classifier_loader,
             "mask_rcnn": self._instance_loader,
-            "rotmask_multi_task": self._multitask_loader,
-            "jigmask_multi_task": self._jig_multitask_loader,
             "dual_mask_multi_task": self._dual_multitask_loader
         }
         if self.type == "train":
