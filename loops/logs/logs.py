@@ -185,8 +185,8 @@ class Logs():
             "val_pre": os.path.join(self.models_path, self.val_pre_model_title),
             "val_post": os.path.join(self.models_path, self.val_post_model_title)
         }
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") #address this!
-        checkpoint = torch.load(path_mapper[type], map_location=device)
+        #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") #address this!
+        checkpoint = torch.load(path_mapper[type]) #, map_location=device)
         model.load_state_dict(checkpoint["state_dict"])
 
     def load_log(self):

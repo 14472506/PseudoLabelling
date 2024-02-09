@@ -86,7 +86,6 @@ class Train():
         self._before_loop(self.model, self.optimiser)
         
         for epoch in range(self.start, self.end):
-            
             self._pre_step(epoch)
 
             self._step(self.model,

@@ -39,8 +39,9 @@ class TaskExecutor():
         """ handle model testing for trained models based on provided config """
         for i in range(start, iters):
             self.config["logs"]["sub_dir"] = "model_" + str(i)
-            tester = Test(self.config)
-            tester.test()
+            with torch.cuda.device(self.config["loops"]["device"]):
+                tester = Test(self.config)
+                tester.test()
 
     def plot(self, start, iters):
         """ handles plotting tasks based on config"""

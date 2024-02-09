@@ -50,7 +50,13 @@ class PreLoop():
         if self.load_model:
             # Load model weights here.
             checkpoint = torch.load(self.load_model, map_location=self.device)
-            model.load_state_dict(checkpoint["state_dict"])
+            pretrained_dict = checkpoint["state_dict"]
+            model_state_dict = model.state_dict()
+
+            pretrained_state_dict = {k: v for k, v in pretrained_dict.items() if k in model_state_dict and model_state_dict[k].size() == v.size()}
+            model_state_dict.update(pretrained_state_dict)
+
+            model.load_state_dict(model_state_dict)
 
             for state in optimiser.state.values():
                 for k, v in state.items():

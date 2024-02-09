@@ -29,7 +29,7 @@ class Losses():
             return self._instance_seg_loss
         if self.model_type == "dual_mask_multi_task":
             if self.cfg["params"]["awl"]:
-                return [self._instance_seg_loss, self._AWL(5), self._AWL(5), self._AWL(2)]
+                return [self._AWL(10)]
             return self._instance_seg_loss
         
     def _instance_seg_loss(self):

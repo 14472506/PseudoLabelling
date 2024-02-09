@@ -18,7 +18,7 @@ class Step():
     def action(self):
         self.action_map = {
             "mask_rcnn": self._instance_seg_action,
-            "dual_mask_multi_task": self._multitask_action2
+            "dual_mask_multi_task": self._multitask_action
         }
         return self.action_map[self.model_name]
 
@@ -158,7 +158,7 @@ class Step():
 
         validate(model, val_loader, loss, device, epoch, log, logger) 
     
-    def _multitask_action2(self, model, train_loader, val_loader, loss, optimiser, device, grad_acc, epoch, log, iter_count, logger):
+    def _multitask_action(self, model, train_loader, val_loader, loss, optimiser, device, grad_acc, epoch, log, iter_count, logger):
         """ Detials """
         def train(model, loader, loss_fun, optimiser, device, scaler, grad_acc, epoch, log, iter_count, logger):
             """ Detials """
@@ -168,31 +168,13 @@ class Step():
             # supervised and self supervised loader extraction
             sup_iter = iter(loader[0])
 
-
-            # losses
-            sup_awl = loss_fun[1]
-            ssl_awl = loss_fun[2]
-            comb_awl = loss_fun[3]
-            _ = loss_fun[0]
+            # losses ! NEEDS TO BE ADDRESSED
+            awl = loss_fun[0]
 
             primary_grad = grad_acc[0] if grad_acc else 1
             secondar_grad = grad_acc[1] if grad_acc else 1
 
             sup_loss_acc, ssl_loss_acc, weighted_losses_acc, pf_loss = 0, 0, 0, 0
-
-            ## ssl step adjust goes here
-            #ssl_adjust = log["iter_accume"] % len(loader[1])
-            #if ssl_adjust:
-            #    print("Adjusting by %s steps" %(ssl_adjust))
-            #    for i in range(ssl_adjust):
-            #        _, _ = next(ssl_iter)
-
-            # Notes: Dont reset the iterator for the larger model at the begining of each epoch, only when the iterator runs out
-
-            # note: for 1, 2 in zip(cycle(sup_loader, ssl_loader))
-            # or: for i, (sup im, sup targ), (ssl_im, ssl_targ) in enumerate(zip(cycle(sup_loader))(ssl_loader))
-
-            # while not sup_iter.end()
                 
             for i in range(len(loader[0])):
                 sup_im, sup_target = next(sup_iter)
@@ -224,14 +206,13 @@ class Step():
                         #ssl_loss =+ ssl_loss.div_(secondar_grad)
                     ssl_loss_acc += ssl_loss.item()
 
-                    sup_weighted = sup_awl(sup_output["loss_classifier"], sup_output["loss_box_reg"], sup_output["loss_mask"], sup_output["loss_objectness"], sup_output["loss_rpn_box_reg"])
-                    ssl_weighted = ssl_awl(ssl_output["loss_classifier"], ssl_output["loss_box_reg"], ssl_output["loss_mask"], ssl_output["loss_objectness"], ssl_output["loss_rpn_box_reg"])
-                    comb_weighted = comb_awl(sup_weighted, ssl_weighted)
+                    weighted_loss = awl(sup_output["loss_classifier"], sup_output["loss_box_reg"], sup_output["loss_mask"], sup_output["loss_objectness"], sup_output["loss_rpn_box_reg"],
+                                        ssl_output["loss_classifier"], ssl_output["loss_box_reg"], ssl_output["loss_mask"], ssl_output["loss_objectness"], ssl_output["loss_rpn_box_reg"])
 
-                    weighted_losses_acc += comb_weighted.item()
-                    pf_loss += comb_weighted.item()
+                    weighted_losses_acc += weighted_loss.item()
+                    pf_loss += weighted_loss.item()
                                 
-                scaler.scale(comb_weighted).backward()
+                scaler.scale(weighted_loss).backward()
                 if (i+1) % primary_grad == 0:
                     # optimiser step
                     scaler.step(optimiser)
@@ -243,7 +224,7 @@ class Step():
                 iter_count += 1
 
                 # Clear GPU Memory
-                del sup_im, sup_target, sup_output, ssl_loss, comb_weighted, ssl_weighted, sup_weighted, ssl_output, ssl_target, ssl_im
+                del sup_im, sup_target, sup_output, ssl_loss, weighted_loss, ssl_output, ssl_target, ssl_im
                 torch.cuda.empty_cache()
                 gc.collect()
 
@@ -273,9 +254,7 @@ class Step():
             sup_iter = iter(loader[0])
 
             # losses
-            sup_awl = loss_fun[1]
-            ssl_awl = loss_fun[2]
-            comb_awl = loss_fun[3]
+            awl = loss_fun[0]
             _ = loss_fun[0]
 
             # ssl step adjust goes here
@@ -308,17 +287,17 @@ class Step():
                         ssl_output = model.forward(ssl_im, ssl_target, mode="ssl")
                         ssl_loss = sum(loss for loss in ssl_output.values())
 
-                        sup_weighted = sup_awl(sup_output["loss_classifier"], sup_output["loss_box_reg"], sup_output["loss_mask"], sup_output["loss_objectness"], sup_output["loss_rpn_box_reg"])
-                        ssl_weighted = ssl_awl(ssl_output["loss_classifier"], ssl_output["loss_box_reg"], ssl_output["loss_mask"], ssl_output["loss_objectness"], ssl_output["loss_rpn_box_reg"])
-                        comb_weighted = comb_awl(sup_weighted, ssl_weighted)
+                    sup_loss_acc += sup_loss.item()
+                    ssl_loss_acc += ssl_loss.item()
+
+                    weighted_loss = awl(sup_output["loss_classifier"], sup_output["loss_box_reg"], sup_output["loss_mask"], sup_output["loss_objectness"], sup_output["loss_rpn_box_reg"],
+                                        ssl_output["loss_classifier"], ssl_output["loss_box_reg"], ssl_output["loss_mask"], ssl_output["loss_objectness"], ssl_output["loss_rpn_box_reg"])
 
                 # collecting losses
-                sup_loss_acc += sup_loss.item()
-                ssl_loss_acc += ssl_loss.item()
-                weighted_losses_acc += comb_weighted.item()
+                weighted_losses_acc += weighted_loss.item()
 
                 # Clear GPU Memory
-                del sup_im, sup_target, sup_output, ssl_loss, comb_weighted, ssl_weighted, sup_weighted, ssl_output, ssl_target, ssl_im
+                del sup_im, sup_target, sup_output, ssl_loss, weighted_loss, ssl_output, ssl_target, ssl_im, sup_loss
                 torch.cuda.empty_cache()
                 gc.collect()
 
@@ -370,9 +349,7 @@ class Step():
         train_title = "Training"
         val_title = "Validating"
 
-        loss[1].to(device)
-        loss[2].to(device)
-        loss[3].to(device)
+        loss[0].to(device)
 
         scaler = torch.cuda.amp.GradScaler(enabled=True)
         self.train_ssl_iter = iter(train_loader[1])

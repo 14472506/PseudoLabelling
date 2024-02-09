@@ -22,7 +22,7 @@ class TestAction():
     def action(self):
         self.action_map = {
             "mask_rcnn": self._instance_seg_action,
-            "dual_mask_multi_task": self._multitask_action2
+            "dual_mask_multi_task": self._multitask_action
         }
         return self.action_map[self.model_name]
     
@@ -31,7 +31,7 @@ class TestAction():
         def mAP_eval(model, loader, logger, device, eval_type="segm", model_type="pre"):
             """ Details """
             # init eval
-            metric = MeanAveragePrecision(iou_type = eval_type, extended_summary = True)
+            metric = MeanAveragePrecision(iou_type = eval_type, extended_summary = False)
             logger.load_model(model, model_type)
             model.eval()
 
@@ -60,19 +60,15 @@ class TestAction():
             return res
 
         results = {}
-        #pre_mAP = mAP_eval(model, loader, logger, device, eval_type="segm", model_type="pre")
-        #pre_mAP = self._convert_to_dict(pre_mAP)
-        #print(pre_mAP)
-        #results["pre_step"] = pre_mAP
+        pre_mAP = mAP_eval(model, loader, logger, device, eval_type="segm", model_type="pre")
+        pre_mAP = self._convert_to_dict(pre_mAP)
+        print(pre_mAP)
+        results["pre_step"] = pre_mAP
         if step:
             post_mAP = mAP_eval(model, loader, logger, device, eval_type="segm", model_type="post")
-        #    post_mAP = self._convert_to_dict(post_mAP)
+            post_mAP = self._convert_to_dict(post_mAP)
             results["post_step"] = post_mAP
-        #logger.save_results(results)
-
-
-        with open('Jigsaw_pt_extended_results.pkl', 'wb') as f:
-            pickle.dump(results, f)        
+        logger.save_results(results)
 
     def _convert_to_dict(self, dict):
         """ Detials """
@@ -81,7 +77,7 @@ class TestAction():
                 dict[key] = value.item()
         return(dict)
 
-    def _multitask_action2(self, model, loader, step, logger, device):
+    def _multitask_action(self, model, loader, step, logger, device):
         """ Detials """
         def mAP_eval(model, loader, logger, device, eval_type="segm", model_type="pre"):
             """ Details """

@@ -28,25 +28,25 @@ class PostStep():
             if self.stepped:
                 logs["post_best_val"].append(logs["val_sup_loss"][-1])
                 logs["post_best_epoch"].append(epoch)
-                logger.save_model(epoch, model, optimiser, "post")
+                logger.save_model(epoch, model, optimiser, "val_post")
                 logger.best[0] = logs["val_sup_loss"][-1]
             else:
                 logs["pre_best_val"].append(logs["val_sup_loss"][-1])
                 logs["pre_best_epoch"].append(epoch)
-                logger.save_model(epoch, model, optimiser, "pre")
+                logger.save_model(epoch, model, optimiser, "val_pre")
                 logger.best[0] = logs["val_sup_loss"][-1]
         
-        #if logs["map"][-1] >= logger.best[1]:
-        #    if self.stepped:
-        #        logs["post_best_map"].append(logs["map"][-1])
-        #        logs["post_best_map_epoch"].append(epoch)
-        #        logger.save_model(epoch, model, optimiser, "post")
-        #        logger.best[1] = logs["map"][-1]
-        #    else:
-        #        logs["pre_best_map"].append(logs["map"][-1])
-        #        logs["pre_best_map_epoch"].append(epoch)
-        #        logger.save_model(epoch, model, optimiser, "pre")
-        #        logger.best[1] = logs["map"][-1]
+        if logs["map"][-1] >= logger.best[1]:
+            if self.stepped:
+                logs["post_best_map"].append(logs["map"][-1])
+                logs["post_best_map_epoch"].append(epoch)
+                logger.save_model(epoch, model, optimiser, "post")
+                logger.best[1] = logs["map"][-1]
+            else:
+                logs["pre_best_map"].append(logs["map"][-1])
+                logs["pre_best_map_epoch"].append(epoch)
+                logger.save_model(epoch, model, optimiser, "pre")
+                logger.best[1] = logs["map"][-1]
 
         logger.update_log_file(logs)
 

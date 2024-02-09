@@ -75,7 +75,7 @@ class Optimisers():
 
         if self.model_name == "dual_mask_multi_task":
             if isinstance(self.loss, list):
-                self.model_params = [{"params": self.model.parameters(), "lr": self.params["lr"]}, {"params": self.loss[1].parameters()}] 
+                self.model_params = [{"params": self.model.parameters(), "lr": self.params["lr"]}, {"params": self.loss[0].parameters()}] 
             else:
                 self.model_params = [{"params": self.model.parameters(), "lr": self.params["lr"]}]
         

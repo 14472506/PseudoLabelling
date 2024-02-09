@@ -4,15 +4,15 @@ meta_data:
 
 defaults: 
   model_name: &model_name dual_mask_multi_task
-  step: &step 200
-  num_rotations: &num_rotations 4
+  step: &step 100
   seed: &seed 42
+  device: &device "cuda:2"
 
 loops:
-  device: "cuda:1"
+  device: *device
   grad_acc: [1, 1]
   start: 0
-  end: 230
+  end: 130
   seed: *seed
 
 logs:
@@ -22,7 +22,7 @@ logs:
   iter_init: 0
   best_init: [.inf, 0]
   step: *step
-  exp_dir: "dualmask_masked_awl_89_230" 
+  exp_dir: "dualmask_masked_awl" 
   sub_dir: "model_0"
   last_title: last_model.pth
   best_post_title: post_best.pth
@@ -30,7 +30,8 @@ logs:
 
 model:
   model_name: *model_name
-  load_model: true
+  device: *device
+  load_model: outputs/models/Baseline_mrcnn/model_0/pre_best.pth
   params:
     backbone_type: pre-trained
     drop_out: 0.5
@@ -40,10 +41,11 @@ model:
     hidden_layers: 256
     min_size: 800
     max_size: 1333
-    load_path: outputs/models/dual_mask_data_multi_awl/model_0/pre_best.pth
+    load_path: outputs/models/Baseline_mrcnn/model_0/pre_best.pth
+    device: *device
 
 dataset:
-  source: [data_handling/sources/jersey_dataset_v4, data_handling/sources/pseudo_labels]
+  source: [data_handler/sources/jersey_dataset_v4, data_handler/sources/pseudo_labels]
   random_seed: *seed
   model_name: *model_name
   col_fn: true
