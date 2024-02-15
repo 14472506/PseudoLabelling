@@ -6,7 +6,7 @@ defaults:
   model_name: &model_name dual_mask_multi_task
   step: &step 100
   seed: &seed 42
-  device: &device "cuda:2"
+  device: &device "cuda:3"
 
 loops:
   device: *device
@@ -31,7 +31,7 @@ logs:
 model:
   model_name: *model_name
   device: *device
-  load_model: outputs/models/Baseline_mrcnn/model_0/pre_best.pth
+  load_model: false  #outputs/models/Baseline_mrcnn/model_0/pre_best.pth
   params:
     backbone_type: pre-trained
     drop_out: 0.5
@@ -41,7 +41,7 @@ model:
     hidden_layers: 256
     min_size: 800
     max_size: 1333
-    load_path: outputs/models/Baseline_mrcnn/model_0/pre_best.pth
+    load_path: outputs/models/Baseline_mrcnn/model_1/pre_best.pth
     device: *device
 
 dataset:
