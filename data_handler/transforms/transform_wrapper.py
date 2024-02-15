@@ -75,10 +75,10 @@ class InstanceWrapper(torch.utils.data.Dataset):
 
 class OBAInstanceWrapper(torch.utils.data.Dataset):
     """ detials """
-    def __init__(self, dataset, transforms):
+    def __init__(self, dataset, transforms, back_source, prob):
         self.dataset = dataset
         self.transforms = transforms
-        self.oba_maker = OBAMaker("data_handler/sources/processed_background_images", p=0.75)
+        self.oba_maker = OBAMaker(back_source, prob)
 
     def __getitem__(self, idx):
         """Details"""
