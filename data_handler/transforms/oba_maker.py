@@ -24,7 +24,7 @@ class OBAMaker():
     
     def basic(self, image, targets):
         """ Detials """
-        if random.random() > self.p:
+        if random.random() <= self.p:
             # get image data
             base_width, base_height = image.size
             backg_image = Image.open(os.path.join(self.backg_root ,random.choice(self.backg_img_list)))
@@ -39,8 +39,6 @@ class OBAMaker():
             
             for mask in targets["masks"]:
                 backg_image.paste(image, (0, 0), Image.fromarray(np.array(mask)*255))
-
-            backg_image.save("test_oba.png")
                 
             return backg_image
         else:
