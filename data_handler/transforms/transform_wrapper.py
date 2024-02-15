@@ -72,6 +72,96 @@ class InstanceWrapper(torch.utils.data.Dataset):
     def __len__(self):
         """ Details """
         return len(self.dataset)
+    
+class PseudodWrapper(torch.utils.data.Dataset):
+    """ Detials """
+    def __init__(self, dataset, transforms):
+        """ Detials """
+        self.dataset = dataset
+        self.light_transforms = transforms["light"]
+        self.heavy_transforms = transforms["heavy"]
+        # tensor to PIL conversion
+        self.to_img = T.ToPILImage()
+
+    def __getitem__(self, idx):
+        """Details"""
+        # Getting image
+        image_tensor, targets = self.dataset[idx]
+        if targets == None:
+            aug_img, heavy_aug_img, targets = self._unlabeled_data(image_tensor)
+        else:
+            aug_img, heavy_aug_img, targets = self._labeled_data(image_tensor, targets)
+        return [aug_img, heavy_aug_img, targets]
+
+    def _unlabeled_data(self, image_tensor):
+        """ Detials """
+        # np image data and blank for augs
+        image_array = self._tensor_to_array(image_tensor)
+        blank = np.zeros_like(image_array)
+
+        # augmentations
+        light_aug_data = self.light_transforms(image=image_array, masks=blank)
+        heavy_aug_data = self.heavy_transforms(image=light_aug_data["image"])
+
+        # auged_image_tensors
+        light_image_tensor = torch.from_numpy(light_aug_data["image"].transpose((2,0,1))).float().div(255)
+        heavy_image_tensor = torch.from_numpy(heavy_aug_data["image"].transpose((2,0,1))).float().div(255)
+
+        return light_image_tensor, heavy_image_tensor, None
+
+    def _labeled_data(self, image_tensor, targets):
+        """ Detials """
+        # mask and image data to np arrays
+        np_masks = []
+        for mask in targets["masks"]: 
+            np_masks.append(self._tensor_to_array(mask))
+        image_array = self._tensor_to_array(image_tensor)
+
+        # augmentations
+        light_aug_data = self.light_transforms(image=image_array, masks=np_masks)
+        heavy_aug_data = self.heavy_transforms(image=light_aug_data["image"])
+
+        # auged_image_tensors
+        light_image_tensor = torch.from_numpy(light_aug_data["image"].transpose((2,0,1))).float().div(255)
+        heavy_image_tensor = torch.from_numpy(heavy_aug_data["image"].transpose((2,0,1))).float().div(255)
+
+        boxes_list = []
+        for mask in light_aug_data["masks"]:
+            box = self._mask_to_bbox(mask)
+            if box == None:
+                pass
+            else:
+                boxes_list.append(box)
+
+        targets["masks"] = torch.stack([torch.tensor(arr) for arr in light_aug_data["masks"]])
+        targets["boxes"] = torch.as_tensor(boxes_list, dtype=torch.float32)
+    
+        return light_image_tensor, heavy_image_tensor, targets
+        
+    def _tensor_to_array(self, image_tensor):
+        """ Detials """
+        return np.array(self.to_img(image_tensor))
+    
+    def _mask_to_bbox(self, binary_mask):
+        """ Details """
+        # Get the axis indices where mask is active (i.e., equals 1)
+        rows, cols = np.where(binary_mask == 1)
+
+        # If no active pixels found, return None
+        if len(rows) == 0 or len(cols) == 0:
+            return None
+
+        # Determine the bounding box coordinates
+        x_min = np.min(cols)
+        y_min = np.min(rows)
+        x_max = np.max(cols)
+        y_max = np.max(rows)
+
+        return [x_min, y_min, x_max, y_max]
+
+    def __len__(self):
+        """ Details """
+        return len(self.dataset)
 
 class OBAInstanceWrapper(torch.utils.data.Dataset):
     """ detials """
@@ -145,7 +235,8 @@ def wrappers(model_type):
     """ Detials """
     transform_select = {
         "mask_rcnn": OBAInstanceWrapper, #InstanceWrapper,
-        "dual_mask_multi_task": InstanceWrapper
+        "dual_mask_multi_task": InstanceWrapper,
+        "mean_teacher_mask_rcnn": PseudodWrapper
     }
     return transform_select[model_type]
 

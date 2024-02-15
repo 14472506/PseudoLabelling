@@ -16,6 +16,7 @@ import numpy as np
 
 # import local packages
 from .datasets.coco import COCODataset, COCO_collate_function
+from .datasets.unlabeled_loader import UnlabeledDataLoader
 from .transforms.transforms import Transforms
 from .transforms.transform_wrapper import wrappers
 
@@ -29,7 +30,6 @@ class Loaders():
         self._get_dataset_class()
 
     """ =========== supporting init methods ========== """
-
     def _extract_config(self):
         """ Extract the attributes from the provided config """
         try:            
@@ -58,11 +58,11 @@ class Loaders():
         dataset_selector = {
             "mask_rcnn": COCODataset,
             "dual_mask_multi_task": COCODataset,
+            "mean_teacher_mask_rcnn": [COCODataset, UnlabeledDataLoader]
         }
         self.dataset_class = dataset_selector[self.model_type]
     
     """ =========== loader Method ========== """
-
     def loader(self):
         """ Return the data loader based on the config """
         loader_selector = {
@@ -76,8 +76,7 @@ class Loaders():
             test_loader = loader_selector[self.model_type]()
             return test_loader
         
-    """ =========== Loader Type Methods ========== """
-        
+    """ =========== Loader Type Methods ========== """    
     def _instance_loader(self):
         """ creates a dataloader for the multi task instance segmentation and classifier based models """
 
@@ -189,11 +188,50 @@ class Loaders():
             ssl_train_loader = self._create_dataloader(ssl_train_dataset, self.train_bs[1], self.train_shuffle, self.train_workers, COCO_collate_function)           
             ssl_val_loader = self._create_dataloader(ssl_val_dataset, self.val_bs[1], self.val_shuffle, self.val_workers, COCO_collate_function)
           
-            
             return [sup_train_loader, ssl_train_loader], [sup_val_loader, ssl_val_loader]  
+
+    def _pseudo_loader(self):
+        """ creates a dataloader for the multi task instance segmentation and classifier based models """
+        if self.type == "test":
+            
+            test_dataset = self.dataset_class[0](self.cfg, "test")
+
+            if self.test_augs:
+                transforms = Transforms(self.cfg).transforms()
+                transforms_wrapper = wrappers(self.model_type)
+                test_dataset = transforms_wrapper(test_dataset, transforms)
+                print("test augs applied")
+            
+            test_loader = self._create_dataloader(test_dataset, self.test_bs, self.test_shuffle, self.test_workers, COCO_collate_function)
+            return test_loader
+        
+        if self.type == "train":
+
+            train_dataset = self.dataset_class[0](self.cfg, "train")
+            unlabeled_dataset = self.dataset_class[1](self.cfg, "train")
+            val_dataset = self.dataset_class(self.cfg, "val")
+
+            if self.train_augs:
+                train_transforms = Transforms(self.cfg).transforms()
+                train_transforms_wrapper = wrappers(self.model_type)
+                train_dataset = train_transforms_wrapper(train_dataset, train_transforms)
+                unlabeled_dataset = train_transforms_wrapper(unlabeled_dataset, train_transforms)
+
+                print("train augs applied")
+
+            if self.val_augs:
+                val_transforms = Transforms(self.cfg).transforms()
+                val_transforms_wrapper = wrappers(self.model_type)
+                val_dataset = val_transforms_wrapper(val_dataset, val_transforms)
+                print("train augs applied")
+
+            train_loader = self._create_dataloader(train_dataset, self.train_bs, self.train_shuffle, self.train_workers, COCO_collate_function) 
+            unlabeled_dataset = self._create_dataloader(unlabeled_dataset, self.train_bs, self.train_shuffle, self.train_workers, COCO_collate_function)          
+            val_loader = self._create_dataloader(val_dataset, self.val_bs, self.val_shuffle, self.val_workers, COCO_collate_function)
+            
+            return [train_loader, unlabeled_dataset], val_loader 
         
     """ =========== Supporting Methods ========== """
-
     def _data_split(self, dataset):
         """ Splits the data of whole datasets based on a specified config split """
         # splitting data into train and test

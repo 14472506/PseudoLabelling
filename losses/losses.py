@@ -31,6 +31,10 @@ class Losses():
             if self.cfg["params"]["awl"]:
                 return [self._AWL(10)]
             return self._instance_seg_loss
+        if self.model_type == "mean_teacher_mask_rcnn":
+            if self.cfg["params"]["awl"]:
+                return [self._AWL(10)]
+            return self._instance_seg_loss
         
     def _instance_seg_loss(self):
         """ returns null for now """

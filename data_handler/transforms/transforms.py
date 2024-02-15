@@ -16,49 +16,26 @@ class Transforms():
     def transforms(self):
         """ Detials """
         transform_selector = {
-            "rotnet_resnet_50": self._rotnet_transforms,
-            "jigsaw": self._jigsaw_transforms,
             "mask_rcnn": self._maskrcnn_tranforms,
-            "rotmask_multi_task": self._multitask_transforms,
-            "dual_mask_multi_task": self._multitask_transforms
+            "dual_mask_multi_task": self._multitask_transforms,
+            "mean_teacher_mask_rcnn": self._mean_teacher_transforms
         }
         return transform_selector[self.model]()
-    
-    def _rotnet_transforms(self):
+
+    def _mean_teacher_transforms(self):
         """ Detials """
-        transforms = A.Compose([
-            A.HorizontalFlip(p=0.5),
-            A.ToGray(p=0.1),
-            A.Downscale(p=0.1),
-            A.ColorJitter(p=0.2),
-            A.RandomBrightnessContrast(p=0.3)
-            #A.RandomResizedCrop(300, 300, p=0.1)
+        light_transforms = A.Compose([
+            A.HorizontalFlip(p=0.5)
+        ], p=1, 
+        additional_targets={'image0': 'image'})
+
+        heavy_transforms = A.Compose([
+            A.RandomBrightnessContrast(p=0.3),
+            A.ToGray(p=0.5)
         ], p=1)
-        return transforms
-    
-    def _jigsaw_transforms(self):
-        """
-        Implementation of Jigsaw augmentations 
-        """
-        #transforms = A.Compose([
-        #    A.OneOf([
-        #        A.RandomBrightnessContrast(p=0.3),
-        #        A.ToGray(p=0.2),
-        #        A.Downscale(p=0.1),
-        #        A.ColorJitter(p=0.2)
-        #        ], p=0.1)
-        #    ], p=1)
-        
-        transforms = A.Compose([
-            A.HorizontalFlip(p=0.5),
-            A.ToGray(p=0.1),
-            A.Downscale(p=0.1),
-            A.ColorJitter(p=0.2),
-            A.RandomBrightnessContrast(p=0.3)
-        ], p=1)
-        
-        return transforms
-    
+
+        return {"light": light_transforms, "heavy": heavy_transforms}
+
     def _maskrcnn_tranforms(self):
         """ Detials """
         transforms = A.Compose([
