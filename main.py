@@ -31,6 +31,7 @@ class TaskExecutor():
         """ handles the training of models based on provided config """
         for i in range(start, iters):
             self.config["logs"]["sub_dir"] = "model_" + str(i)
+            self.config["logs"]["best_init"] = [float("inf"), 0]
             with torch.cuda.device(self.config["loops"]["device"]):
                 trainer = Train(self.config)
                 trainer.train()
