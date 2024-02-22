@@ -13,6 +13,7 @@ when the model attribute is called
 # local packages
 from .mask_rcnn_model import maskrcnn_resnet50_fpn
 from .dual_mask_model_dev import dual_mask_resnet50_fpn
+from .polite_teacher import polite_teacher_resnet50_fpn
 
 # class
 class Models():
@@ -26,7 +27,8 @@ class Models():
         """ Initialize the Models class with the configuration dictionary """
         self.model_mapping = {
             "mask_rcnn":maskrcnn_resnet50_fpn,
-            "dual_mask_multi_task": dual_mask_resnet50_fpn
+            "dual_mask_multi_task": dual_mask_resnet50_fpn,
+            "polite_teacher_mask_rcnn": polite_teacher_resnet50_fpn
         }
     
     def _exctract_cfg(self):

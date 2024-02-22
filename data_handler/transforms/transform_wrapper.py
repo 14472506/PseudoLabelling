@@ -100,7 +100,7 @@ class PseudodWrapper(torch.utils.data.Dataset):
         blank = np.zeros_like(image_array)
 
         # augmentations
-        light_aug_data = self.light_transforms(image=image_array, masks=blank)
+        light_aug_data = self.light_transforms(image=image_array)
         heavy_aug_data = self.heavy_transforms(image=light_aug_data["image"])
 
         # auged_image_tensors
@@ -122,7 +122,6 @@ class PseudodWrapper(torch.utils.data.Dataset):
         heavy_aug_data = self.heavy_transforms(image=light_aug_data["image"])
 
         # auged_image_tensors
-        light_image_tensor = torch.from_numpy(light_aug_data["image"].transpose((2,0,1))).float().div(255)
         heavy_image_tensor = torch.from_numpy(heavy_aug_data["image"].transpose((2,0,1))).float().div(255)
 
         boxes_list = []
@@ -136,7 +135,7 @@ class PseudodWrapper(torch.utils.data.Dataset):
         targets["masks"] = torch.stack([torch.tensor(arr) for arr in light_aug_data["masks"]])
         targets["boxes"] = torch.as_tensor(boxes_list, dtype=torch.float32)
     
-        return light_image_tensor, heavy_image_tensor, targets
+        return None, heavy_image_tensor, targets
         
     def _tensor_to_array(self, image_tensor):
         """ Detials """
@@ -236,7 +235,7 @@ def wrappers(model_type):
     transform_select = {
         "mask_rcnn": OBAInstanceWrapper, #InstanceWrapper,
         "dual_mask_multi_task": InstanceWrapper,
-        "mean_teacher_mask_rcnn": PseudodWrapper
+        "polite_teacher_mask_rcnn": PseudodWrapper
     }
     return transform_select[model_type]
 

@@ -15,7 +15,8 @@ class PreStep():
     def action(self):
         self.action_map = {
             "mask_rcnn": self._instance_seg_action,
-            "dual_mask_multi_task": self._multitask_action
+            "dual_mask_multi_task": self._multitask_action,
+            "polite_teacher_mask_rcnn": self._pseudo_action
         }
         return self.action_map[self.model_name]
 
@@ -29,6 +30,16 @@ class PreStep():
         print(banner)
     
     def _multitask_action(self, epoch):
+        """ Detials """
+
+        banner = "--------------------------------------------------------------------------------"
+        title = "Epoch: " + str(epoch)
+
+        print(banner)
+        print(title)
+        print(banner)
+
+    def _pseudo_action(self, epoch):
         """ Detials """
 
         banner = "--------------------------------------------------------------------------------"

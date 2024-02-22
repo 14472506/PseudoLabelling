@@ -76,7 +76,8 @@ class Logs():
         """ Detials """
         logs_mapper = {
             "mask_rcnn": self._instance_seg_logs,
-            "dual_mask_multi_task": self._multitask_logs2
+            "dual_mask_multi_task": self._multitask_logs2,
+            "polite_teacher_mask_rcnn": self._pseudo_logs
         }
         return logs_mapper[self.model_name]()
     
@@ -135,6 +136,29 @@ class Logs():
                 "val_it_accume": 0
             }
         return logger
+
+    def _pseudo_logs(self):
+        if self.logs_type == "basic":
+            logger = {
+                "train_loss": [],
+                "train_labeled_loss": [],
+                "train_pseudo_labeled_loss": [],
+                "val_loss": [],
+                "epochs": [],
+                "pre_best_val": [],
+                "pre_best_epoch": [],
+                "post_best_val": [],
+                "post_best_epoch": [],
+                "post_best_map":[],
+                "post_best_map_epoch": [],
+                "pre_best_map": [],
+                "pre_best_map_epoch": [],
+                "map": [],
+                "student_train_loss": [],
+                "student_val_loss": [],
+                "student_map": []
+            }
+        return logger        
     
     def train_loop_reporter(self, epoch, iter_count, device, pf_loss):
         """ Detials """

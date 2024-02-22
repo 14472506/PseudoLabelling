@@ -58,7 +58,7 @@ class Loaders():
         dataset_selector = {
             "mask_rcnn": COCODataset,
             "dual_mask_multi_task": COCODataset,
-            "mean_teacher_mask_rcnn": [COCODataset, UnlabeledDataLoader]
+            "polite_teacher_mask_rcnn": [COCODataset, UnlabeledDataLoader],
         }
         self.dataset_class = dataset_selector[self.model_type]
     
@@ -67,7 +67,8 @@ class Loaders():
         """ Return the data loader based on the config """
         loader_selector = {
             "mask_rcnn": self._instance_loader,
-            "dual_mask_multi_task": self._dual_multitask_loader
+            "dual_mask_multi_task": self._dual_multitask_loader,
+            "polite_teacher_mask_rcnn": self._pseudo_loader
         }
         if self.type == "train":
             train_loader, val_loader = loader_selector[self.model_type]()
@@ -193,8 +194,11 @@ class Loaders():
     def _pseudo_loader(self):
         """ creates a dataloader for the multi task instance segmentation and classifier based models """
         if self.type == "test":
+
+            labeled_cfg = copy.deepcopy(self.cfg)
+            labeled_cfg["source"] = self.cfg["source"][0]
             
-            test_dataset = self.dataset_class[0](self.cfg, "test")
+            test_dataset = self.dataset_class[0](labeled_cfg, "test")
 
             if self.test_augs:
                 transforms = Transforms(self.cfg).transforms()
@@ -206,10 +210,15 @@ class Loaders():
             return test_loader
         
         if self.type == "train":
+            
+            labeled_cfg = copy.deepcopy(self.cfg)
+            unlabeled_cfg = copy.deepcopy(self.cfg)
+            labeled_cfg["source"] = self.cfg["source"][0]
+            unlabeled_cfg["source"] = self.cfg["source"][1]
 
-            train_dataset = self.dataset_class[0](self.cfg, "train")
-            unlabeled_dataset = self.dataset_class[1](self.cfg, "train")
-            val_dataset = self.dataset_class(self.cfg, "val")
+            train_dataset = self.dataset_class[0](labeled_cfg, "train")
+            unlabeled_dataset = self.dataset_class[1](unlabeled_cfg, "train")
+            val_dataset = self.dataset_class[0](labeled_cfg, "val")
 
             if self.train_augs:
                 train_transforms = Transforms(self.cfg).transforms()

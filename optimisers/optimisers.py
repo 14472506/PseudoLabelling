@@ -58,7 +58,7 @@ class Optimisers():
             else:
                 self.model_params = [{"params": self.model.parameters(), "lr": self.params["lr"]}]
         
-        if self.model_name == "mean_teacher_mask_rcnn":
+        if self.model_name == "polite_teacher_mask_rcnn":
             if isinstance(self.loss, list):
                 self.model_params = [{"params": self.model.parameters(), "lr": self.params["lr"]}, {"params": self.loss[0].parameters()}] 
             else:
