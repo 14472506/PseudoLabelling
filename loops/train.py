@@ -100,7 +100,7 @@ class Train():
                        self.iter_count,
                        self.logger
                        )
-            
+              
             self._post_step(epoch, 
                             self.model, 
                             self.optimiser, 

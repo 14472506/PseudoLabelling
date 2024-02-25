@@ -234,7 +234,7 @@ def wrappers(model_type):
     """ Detials """
     transform_select = {
         "mask_rcnn": OBAInstanceWrapper, #InstanceWrapper,
-        "dual_mask_multi_task": InstanceWrapper,
+        "dual_mask_multi_task": PseudodWrapper,
         "polite_teacher_mask_rcnn": PseudodWrapper
     }
     return transform_select[model_type]

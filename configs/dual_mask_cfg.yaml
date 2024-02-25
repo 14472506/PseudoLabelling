@@ -4,15 +4,15 @@ meta_data:
 
 defaults: 
   model_name: &model_name dual_mask_multi_task
-  step: &step 100
+  step: &step 601
   seed: &seed 42
-  device: &device "cuda:3"
+  device: &device "cuda:0"
 
 loops:
   device: *device
-  grad_acc: [1, 1]
+  grad_acc: 1
   start: 0
-  end: 130
+  end: 600
   seed: *seed
 
 logs:
@@ -22,7 +22,7 @@ logs:
   iter_init: 0
   best_init: [.inf, 0]
   step: *step
-  exp_dir: "dualmask_masked_awl" 
+  exp_dir: "dualmask_pseudo_test" 
   sub_dir: "model_0"
   last_title: last_model.pth
   best_post_title: post_best.pth
@@ -31,7 +31,7 @@ logs:
 model:
   model_name: *model_name
   device: *device
-  load_model: false  #outputs/models/Baseline_mrcnn/model_0/pre_best.pth
+  load_model: outputs/models/OBA_25perc_MRCNN/model_0/post_best.pth
   params:
     backbone_type: pre-trained
     drop_out: 0.5
@@ -41,33 +41,33 @@ model:
     hidden_layers: 256
     min_size: 800
     max_size: 1333
-    load_path: outputs/models/Baseline_mrcnn/model_1/pre_best.pth
+    load_path: false
     device: *device
 
 dataset:
-  source: [data_handler/sources/jersey_dataset_v4, data_handler/sources/pseudo_labels]
+  source: [data_handler/sources/jersey_dataset_v4, data_handler/sources/on_site_data]
   random_seed: *seed
   model_name: *model_name
   col_fn: true
   params:
     train:
-      dir: [train, null]
-      json: [train.json, train_v2.json]
-      batch_size: [1, 1]
+      dir: train
+      json: train.json
+      batch_size: 1
       shuffle: true
       num_workers: 0
       augmentations: true
     val:
-      dir: [val, null]
-      json: [val.json, val_v2.json]
-      batch_size: [1, 1]
+      dir: val
+      json: val.json
+      batch_size: 1
       shuffle: false
       num_workers: 0
       augmentations: false
     test:
-      dir: [test, null]
-      json: [test.json, test_v2.json]
-      batch_size: [1, 1]
+      dir: test
+      json: test.json
+      batch_size: 1
       shuffle: false
       num_workers: 0
       augmentations: false

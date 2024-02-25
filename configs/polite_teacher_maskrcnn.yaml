@@ -4,7 +4,7 @@ meta_data:
 
 defaults: 
   model_name: &model_name polite_teacher_mask_rcnn
-  step: &step 200
+  step: &step 601
   seed: &seed 42
   device: &device "cuda:0"
 
@@ -12,7 +12,7 @@ loops:
   device: *device
   grad_acc: 1
   start: 0
-  end: 200
+  end: 600
   seed: *seed
 
 logs:
@@ -22,7 +22,7 @@ logs:
   iter_init: 0
   best_init: [.inf, 0]
   step: *step
-  exp_dir: "Polite_Teacher_Burn_In_Test"
+  exp_dir: "DELETE_THIS"
   sub_dir: "model_0"
   last_title: last_model.pth
   best_post_title: post_best.pth

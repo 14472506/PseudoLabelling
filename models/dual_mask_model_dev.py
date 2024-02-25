@@ -348,15 +348,38 @@ class DualMaskRCNN(MaskRCNN):
         self.roi_heads.second_box_predictor = second_box_predictor
         self.roi_heads.second_mask_predictor = second_mask_predictor
 
-    def forward(self, images, targets=None, mode="sup"):
-        self._set_mode(mode)
+    # Exponential Moving Average handling ---------------------------------------------------------
+    def ema_update(self, alpha = 0.99):
+        """
+        Detials
+        """
+        with torch.no_grad():
+            for teacher_params, student_params in zip(self._teacher_params(), self._student_params()):
+                teacher_params.data.mul_(alpha).add_(student_params.data, alpha=1.0-alpha)
+
+    def _teacher_params(self):
+        """ Details """
+        for params in self.roi_heads.box_predictor.parameters():
+            yield params
+        for params in self.roi_heads.mask_predictor.parameters():
+            yield params
+
+    def _student_params(self):
+        """ Detials """
+        for params in self.roi_heads.second_box_predictor.parameters():
+            yield params
+        for params in self.roi_heads.second_mask_predictor.parameters():
+            yield params
+
+    def forward(self, images, targets=None, forward_type="teacher"):
+        self._set_mode(forward_type)
         return super().forward(images, targets)
 
     def _set_mode(self, mode):
-        if mode == "sup":
+        if mode == "teacher":
             self.roi_heads.first_box_flag = True
             self.roi_heads.first_mask_flag = True
-        elif mode == "ssl":
+        elif mode == "student":
             self.roi_heads.first_box_flag = False
             self.roi_heads.first_mask_flag = False
         else:

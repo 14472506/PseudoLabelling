@@ -17,7 +17,7 @@ class PostLoop():
     def action(self):
         self.action_map = {
             "mask_rcnn": self._instance_seg_action,
-            "dual_mask_multi_task": self._multitask_action,
+            "dual_mask_multi_task": self._pseudo_action,
             "polite_teacher_mask_rcnn": self._pseudo_action
         }
         return self.action_map[self.model_name]

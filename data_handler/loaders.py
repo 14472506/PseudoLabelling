@@ -57,7 +57,7 @@ class Loaders():
         """ retirieve the dataloader based on the model type """
         dataset_selector = {
             "mask_rcnn": COCODataset,
-            "dual_mask_multi_task": COCODataset,
+            "dual_mask_multi_task": [COCODataset, UnlabeledDataLoader],
             "polite_teacher_mask_rcnn": [COCODataset, UnlabeledDataLoader],
         }
         self.dataset_class = dataset_selector[self.model_type]
@@ -67,7 +67,7 @@ class Loaders():
         """ Return the data loader based on the config """
         loader_selector = {
             "mask_rcnn": self._instance_loader,
-            "dual_mask_multi_task": self._dual_multitask_loader,
+            "dual_mask_multi_task": self._pseudo_loader,
             "polite_teacher_mask_rcnn": self._pseudo_loader
         }
         if self.type == "train":

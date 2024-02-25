@@ -76,7 +76,7 @@ class Logs():
         """ Detials """
         logs_mapper = {
             "mask_rcnn": self._instance_seg_logs,
-            "dual_mask_multi_task": self._multitask_logs2,
+            "dual_mask_multi_task": self._pseudo_logs,
             "polite_teacher_mask_rcnn": self._pseudo_logs
         }
         return logs_mapper[self.model_name]()

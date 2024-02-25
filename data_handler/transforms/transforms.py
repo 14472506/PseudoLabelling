@@ -17,7 +17,7 @@ class Transforms():
         """ Detials """
         transform_selector = {
             "mask_rcnn": self._maskrcnn_tranforms,
-            "dual_mask_multi_task": self._multitask_transforms,
+            "dual_mask_multi_task": self._polite_teacher_transforms,
             "polite_teacher_mask_rcnn": self._polite_teacher_transforms
         }
         return transform_selector[self.model]()

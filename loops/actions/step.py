@@ -25,7 +25,7 @@ class Step():
     def action(self):
         self.action_map = {
             "mask_rcnn": self._instance_seg_action,
-            "dual_mask_multi_task": self._multitask_action,
+            "dual_mask_multi_task": self._pseudo_action,
             "polite_teacher_mask_rcnn": self._pseudo_action
         }
         return self.action_map[self.model_name]
@@ -397,13 +397,14 @@ class Step():
                 with autocast():
                     labeled_output = model.forward(images, targets, forward_type="student")
                 del images, targets
-
-                pseduo_images = list(image.to(device) for image in pseduo_images)
-                pseudo_targets = [{k: v.to(device) for k, v in t.items()} for t in pseudo_targets]
-                with autocast():
-                    pseudo_output = model.forward(pseduo_images, pseudo_targets, forward_type="student")
-                del pseduo_images, pseudo_targets
-
+                
+                if epoch < 62:
+                    pseduo_images = list(image.to(device) for image in pseduo_images)
+                    pseudo_targets = [{k: v.to(device) for k, v in t.items()} for t in pseudo_targets]
+                    with autocast():
+                        pseudo_output = model.forward(pseduo_images, pseudo_targets, forward_type="student")
+                    del pseduo_images, pseudo_targets
+                
                 with autocast():
                     weighted_loss = awl(labeled_output["loss_classifier"], 
                                         labeled_output["loss_box_reg"], 
@@ -528,24 +529,27 @@ class Step():
 
         def get_pseudo_data(model, loader, device):
             """ Detials """
-            try:
-                images, heavy_images, _ = next(self.pseudo_iter) 
-            except StopIteration:
-                print("resetting iter")
-                self.train_ssl_iter = iter(loader)
-                images, heavy_images = next(self.pseudo_iter)
-            image = list(image.to(device) for image in images)
+            model.eval()  # Move model evaluation mode outside the loop
+            while True:
+                try:
+                    images, heavy_images, _ = next(self.pseudo_iter)
+                except StopIteration:
+                    print("Resetting iterator.")
+                    self.pseudo_iter = iter(loader)  # Fixed potential typo
+                    images, heavy_images, _ = next(self.pseudo_iter)
+        
+                processed_images = [image.to(device) for image in images]
 
-            model.eval()
-            with torch.no_grad():
-                predictions = model(image, forward_type="teacher")
-            outputs = filter_predictions(predictions)
+                with torch.no_grad():
+                    predictions = model(processed_images, forward_type="teacher")
+                outputs = filter_predictions(predictions)
+                if outputs:
+                    break  # Exit loop if outputs are not None
 
             masks = outputs["masks"]
             area = masks.squeeze(1).sum(dim=[1, 2])
-
-            # look out for this - its temp
-            image_id = torch.arange(masks.size(0))
+            image_id = torch.arange(masks.size(0), dtype=torch.int64)
+            iscrowd = torch.zeros((outputs["boxes"].size(0),), dtype=torch.int64)
 
             targets = {
                 "boxes": outputs["boxes"],
@@ -553,28 +557,38 @@ class Step():
                 "masks": masks,
                 "image_id": image_id,
                 "area": area,
-                "iscrowd": torch.zeros((outputs["boxes"].size(0),), dtype=torch.int64) # assuming is crowd is none 
+                "iscrowd": iscrowd
             }
 
             del predictions, outputs, masks, area
             return heavy_images, (targets,)
         
-        def filter_predictions(predictions, threshold=0.5):
+        def filter_predictions(predictions, threshold=0.75):
             """ Filters the predicted masks to get the masks and meta data from the model """
-            masks = (predictions[0]["masks"] > 0.9).float()
+            # get threshold indices
             valid_indices = torch.nonzero(predictions[0]["scores"] > threshold).squeeze(1)
+            if len(valid_indices) == 0:
+                return None
 
-            masks = masks[valid_indices]
+            # get mask data
+            masks = predictions[0]["masks"][valid_indices]
+            masks = (masks > 0.5).float()
+            masks = masks
+
+            # get other data 
             boxes = predictions[0]["boxes"][valid_indices]
             labels = predictions[0]["labels"][valid_indices]
             scores = predictions[0]["scores"][valid_indices]
 
+            # structure outputs
             outputs = {
                 "masks": masks.detach().cpu(),
                 "boxes": boxes.detach().cpu(),
                 "labels": labels.detach().cpu(),
                 "scores": scores.detach().cpu()
                 }
+            
+            # delete and return
             del predictions, masks, valid_indices, boxes, labels, scores
             return outputs
 
@@ -593,13 +607,13 @@ class Step():
         if not self.iter_init_flag:
             self.pseudo_iter = iter(train_loader[1])
             self.iter_init_flag = True
-
+        
         if self.burn_in_targ_needed:
-
+        
             print(banner)
             print(first_val)
             print(banner)
-
+        
             self.burn_in_target = validate(model, val_loader, loss, device, epoch, log, logger)
             self.burn_in_targ_needed = False
 
