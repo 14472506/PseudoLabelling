@@ -6,7 +6,7 @@ defaults:
   model_name: &model_name polite_teacher_mask_rcnn
   step: &step 601
   seed: &seed 42
-  device: &device "cuda:0"
+  device: &device "cuda:3"
 
 loops:
   device: *device
@@ -31,7 +31,7 @@ logs:
 model:
   model_name: *model_name
   device: *device
-  load_model: outputs/models/OBA_25perc_MRCNN/model_0/post_best.pth
+  load_model: outputs/models/Baseline_mrcnn/model_1/pre_best.pth
   params:
     ssl_pt: false
     backbone_type: pre-trained
