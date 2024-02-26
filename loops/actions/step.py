@@ -398,12 +398,11 @@ class Step():
                     labeled_output = model.forward(images, targets, forward_type="student")
                 del images, targets
                 
-                if epoch < 62:
-                    pseduo_images = list(image.to(device) for image in pseduo_images)
-                    pseudo_targets = [{k: v.to(device) for k, v in t.items()} for t in pseudo_targets]
-                    with autocast():
-                        pseudo_output = model.forward(pseduo_images, pseudo_targets, forward_type="student")
-                    del pseduo_images, pseudo_targets
+                pseduo_images = list(image.to(device) for image in pseduo_images)
+                pseudo_targets = [{k: v.to(device) for k, v in t.items()} for t in pseudo_targets]
+                with autocast():
+                    pseudo_output = model.forward(pseduo_images, pseudo_targets, forward_type="student")
+                del pseduo_images, pseudo_targets
                 
                 with autocast():
                     weighted_loss = awl(labeled_output["loss_classifier"], 
@@ -608,14 +607,15 @@ class Step():
             self.pseudo_iter = iter(train_loader[1])
             self.iter_init_flag = True
         
-        if self.burn_in_targ_needed:
-        
-            print(banner)
-            print(first_val)
-            print(banner)
-        
-            self.burn_in_target = validate(model, val_loader, loss, device, epoch, log, logger)
-            self.burn_in_targ_needed = False
+        #if self.burn_in_targ_needed:
+        #
+        #    print(banner)
+        #    print(first_val)
+        #    print(banner)
+        #
+        #    self.burn_in_target = validate(model, val_loader, loss, device, epoch, log, logger)
+        #    self.burn_in_targ_needed = False
+        self.burn_in = True
 
         print(banner)
         print(train_title)
