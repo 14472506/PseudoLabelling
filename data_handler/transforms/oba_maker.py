@@ -12,16 +12,17 @@ import numpy as np
 # class
 class OBAMaker():
     """ Detials """
-    def __init__(self, backg_root, p=0):
+    def __init__(self, backg_root, type, p=0):
         """ detials """
         # init vars
+        self.type = type
         self.backg_root = backg_root
         self.p = p
 
         # generate background file list
         self.backg_img_list = self._img_dir_lister()
 
-    
+    # BASIC =======================================================================================
     def basic(self, image, targets):
         """ Detials """
         if random.random() <= self.p:
@@ -43,7 +44,28 @@ class OBAMaker():
             return backg_image
         else:
             return image
+        
+    # COMPLEX =====================================================================================
+    # base function
+    def complex(self, image, targets):
+        """ Detials """
+        if random.random() <= self.p:
+            # decide on injection or synthasis
+            if random.random <= 0.5:
+                image, target = self.injection(image, target)
+            else:
+                image, target = self.synthasis(image, target)
+        return image, target
+    
+    def injection(self, image, target):
+        """ Detials """
+        pass
 
+    def synthasis(self, image, target):
+        """ Details """
+        pass
+
+    # SUPORTING ===================================================================================
     def _img_dir_lister(self):
         """ detials """
         image_extensions = ('.png', '.jpg', '.jpeg', '.bmp', '.gif', '.tiff', '.tif')
