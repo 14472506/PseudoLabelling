@@ -102,7 +102,7 @@ class Loaders():
             if self.train_augs:
                 train_transforms = Transforms(self.cfg).transforms()
                 train_transforms_wrapper = wrappers(self.model_type)
-                train_dataset = train_transforms_wrapper(train_dataset, train_transforms, self.cfg["oba_backg_source"], self.cfg["oba_prob"])
+                train_dataset = train_transforms_wrapper(train_dataset, train_transforms, self.cfg["oba_backg_source"], self.cfg["oba_instance_source"], self.cfg["oba_prob"], self.cfg["oba_type"])
 
                 print("train augs applied")
 

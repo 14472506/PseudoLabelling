@@ -75,10 +75,10 @@ class InstanceWrapper(torch.utils.data.Dataset):
 
 class OBAInstanceWrapper(torch.utils.data.Dataset):
     """ detials """
-    def __init__(self, dataset, transforms, back_source, prob, type):
+    def __init__(self, dataset, transforms, back_source, instance_source=None ,prob=0.5, type="simple"):
         self.dataset = dataset
         self.transforms = transforms
-        self.oba_maker = OBAMaker(back_source, prob)
+        self.oba_maker = OBAMaker(back_source, instance_source, prob)
         self.type = type
 
     def __getitem__(self, idx):
@@ -91,16 +91,18 @@ class OBAInstanceWrapper(torch.utils.data.Dataset):
         image_pil = to_img(image_tensor)
 
         # Just basic oba atm
-        if type == "basic":
+        if self.type == "basic":
             image_pil = self.oba_maker.basic(image_pil, target_tensors)
-            image_arr = np.array(image_pil)
-            np_masks = []
-            for mask, box in zip(target_tensors["masks"], target_tensors["boxes"]): 
-                mask_img = to_img(mask)
-                # append values to accumulated lists
-                np_masks.append(np.array(mask_img))
-        if type == "complex":
-            image_arr, np_masks = self.oba_maker.complex(image_pil, target_tensors)
+        if self.type == "complex":
+            image_pil, target_tensors = self.oba_maker.complex(image_pil, target_tensors)
+        
+        image_arr = np.array(image_pil)
+        np_masks = []
+        for mask, box in zip(target_tensors["masks"], target_tensors["boxes"]): 
+            mask_img = to_img(mask)
+            # append values to accumulated lists
+            np_masks.append(np.array(mask_img))
+
 
         # applying augmentations
         aug_data = self.transforms(image=image_arr, masks=np_masks)

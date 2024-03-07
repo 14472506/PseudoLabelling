@@ -7,6 +7,7 @@ import json
 import numpy as np
 from PIL import Image
 from pycocotools.mask import frPyObjects, decode
+import copy
 
 # main
 def main(source_dir, json_file):
@@ -15,6 +16,10 @@ def main(source_dir, json_file):
     with open(path, "r") as file:
         data = json.load(file)
 
+    new_data = copy.deepcopy(data)
+
+    new_images_data = []
+    new_instances_data = []
     image_id = None
     image = None
     for anno in data["annotations"]:
@@ -43,12 +48,11 @@ def main(source_dir, json_file):
         mask_image = Image.fromarray(np.uint8(mask_2d*255)).crop(bbox).convert("L")
         instance_image.paste(cropped_image, (0,0), mask = mask_image)
 
-        ## save image
-        #id = anno["id"]
-        #image_title = f"raw_instances/image_{id}.png"
+        # save image
+        id = anno["id"]
+        image_title = f"raw_instances/image_{id}.png"
         #instance_image.save(image_title)   
-        #print(image_title)
-
+ 
         new_poly = []
         for poly in anno_poly:
             sub_poly = []
@@ -59,11 +63,52 @@ def main(source_dir, json_file):
                     x_adjust = 0
                 if y_adjust < 0:
                     y_adjust = 0
+
+                x_adjust = float(x_adjust)
+                y_adjust = float(y_adjust)
+
                 sub_poly.extend([x_adjust, y_adjust])
             new_poly.extend([sub_poly])
 
         print(new_poly)
 
+
+        inst_width, inst_height = instance_image.size   
+        file_name = f"image_{id}.png" 
+
+        image_data = {
+            'id': id,
+            'dataset_id': 42,
+            'path': image_title,
+            'width': inst_width,
+            'height': inst_height,
+            'file_name': file_name,
+            'source_width': width,
+            'source_height': height
+        }
+
+        annotation_data = {
+            'id': id,
+            'image_id': id,
+            'category_id': 1,
+            'segmentation': new_poly,
+            'iscrowd': False,
+            'isbbox': False,
+            'color': '#de45fc',
+            'keypoints': [],
+            'metadata': {}
+        }
+
+        new_images_data.append(image_data)
+        new_instances_data.append(annotation_data)
+
+    new_data["images"] = new_images_data
+    new_data["annotations"] = new_instances_data
+
+    new_path = "instances.json"
+    with open(new_path, "w") as new_file:
+        json.dump(new_data ,new_file)
+    
 def find_bbox(mask):
     rows = np.any(mask, axis=1)
     cols = np.any(mask, axis=0)
