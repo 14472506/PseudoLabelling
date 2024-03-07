@@ -75,33 +75,37 @@ class InstanceWrapper(torch.utils.data.Dataset):
 
 class OBAInstanceWrapper(torch.utils.data.Dataset):
     """ detials """
-    def __init__(self, dataset, transforms, back_source, prob):
+    def __init__(self, dataset, transforms, back_source, instance_source=None ,prob=0.5, type="simple"):
         self.dataset = dataset
         self.transforms = transforms
-        self.oba_maker = OBAMaker(back_source, prob)
+        self.oba_maker = OBAMaker(back_source, instance_source, prob)
+        self.type = type
 
     def __getitem__(self, idx):
         """Details"""
         # Getting image
-        mrcnn_tensor, mrcnn_target = self.dataset[idx]
+        image_tensor, target_tensors = self.dataset[idx]
 
         # converting tensors to arrays
         to_img = T.ToPILImage()        
-        mrcnn_img = to_img(mrcnn_tensor)
+        image_pil = to_img(image_tensor)
 
         # Just basic oba atm
-        mrcnn_img = self.oba_maker.basic(mrcnn_img, mrcnn_target)
-
-        mrcnn_arr = np.array(mrcnn_img)
-
+        if self.type == "basic":
+            image_pil = self.oba_maker.basic(image_pil, target_tensors)
+        if self.type == "complex":
+            image_pil, target_tensors = self.oba_maker.complex(image_pil, target_tensors)
+        
+        image_arr = np.array(image_pil)
         np_masks = []
-        for mask, box in zip(mrcnn_target["masks"], mrcnn_target["boxes"]): 
+        for mask, box in zip(target_tensors["masks"], target_tensors["boxes"]): 
             mask_img = to_img(mask)
             # append values to accumulated lists
             np_masks.append(np.array(mask_img))
 
+
         # applying augmentations
-        aug_data = self.transforms(image=mrcnn_arr, masks=np_masks)
+        aug_data = self.transforms(image=image_arr, masks=np_masks)
 
         boxes_list = []
         for mask in aug_data["masks"]:
@@ -112,13 +116,13 @@ class OBAInstanceWrapper(torch.utils.data.Dataset):
                 boxes_list.append(box)
 
         # extracting auged data
-        mrcnn_transformed = torch.from_numpy(aug_data["image"])
-        mrcnn_transformed = mrcnn_transformed.permute(2,0,1)
-        mrcnn_transformed = mrcnn_transformed.to(dtype=torch.float32) / 255.0
-        mrcnn_target["masks"] = torch.stack([torch.tensor(arr) for arr in aug_data["masks"]])
-        mrcnn_target["boxes"] = torch.as_tensor(boxes_list, dtype=torch.float32)
+        image_transformed = torch.from_numpy(aug_data["image"])
+        image_transformed = image_transformed.permute(2,0,1)
+        image_transformed = image_transformed.to(dtype=torch.float32) / 255.0
+        target_tensors["masks"] = torch.stack([torch.tensor(arr) for arr in aug_data["masks"]])
+        target_tensors["boxes"] = torch.as_tensor(boxes_list, dtype=torch.float32)
         
-        return mrcnn_transformed, mrcnn_target
+        return image_transformed, target_tensors
     
     def _mask_to_bbox(self, binary_mask):
         """ Details """
